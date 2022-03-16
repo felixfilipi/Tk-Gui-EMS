@@ -1,5 +1,6 @@
-import tkinter
+import tkinter 
 from tkinter import *
+from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 import pymysql
 import datetime
@@ -22,8 +23,9 @@ class WindowDraggable():
         y = (event.y_root - self.y - self.label.winfo_rooty() +
                 self.label.winfo_rooty())
         root.geometry("+%s+%s" % (x, y))
-        judul_kolom = ("EMPLOYEE_ID", "EMPLOYEE_NAME, EMPLOYEE_BOD,
-        EMPLOYEE_ADDRESS, EMPLOYEE_PHONE")
+    
+column_title = ("EMPLOYEE_ID", "EMPLOYEE_NAME", "EMPLOYEE_BOD",
+            "EMPLOYEE_ADDRESS", "EMPLOYEE_PHONE")
 
 class employee:
     def __init__(self, parent):
@@ -32,7 +34,7 @@ class employee:
         width = 650
         height = 500
         halfWidth = (self.parent.winfo_screenwidth() - width) // 2
-        halfHeigth = (self.parent.winfo_screenheight() = height) // 2
+        halfHeigth = (self.parent.winfo_screenheight() - height) // 2
         self.parent.overrideredirect(1)
         self.confComponent()
         self.auto()
@@ -56,8 +58,7 @@ class employee:
         con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user="root",
                 passwd="root", host="localhost", port="3306", autocommit = True)
         cur = con.cursor()
-        sql = "SELECT EMPLOYEE_NAME, EMPLOYEE_BOD, EMPLOYEE_ADDRESS, EMPLOYEE_PHONE
-        FROM EMPLOYEE WHERE EMPLOYEE_ID = %s"
+        sql = "SELECT EMPLOYEE_NAME, EMPLOYEE_BOD, EMPLOYEE_ADDRESS, EMPLOYEE_PHONE FROM EMPLOYEE WHERE EMPLOYEE_ID = %s"
         cur.execute(sql, cKode)
         data = cur.fetchone()
         
@@ -168,7 +169,7 @@ class employee:
         self.btnSave = Button(btnFrame, text = 'Save', command = self.onSave,
                 width = 10, relief = FLAT, bd = 2, bg = "#666", fg = "white",
                 activebackground = "#444", activeforeground = "white")
-        slef.btnSave.grid(row = 0, column = 1, padx = 5)
+        self.btnSave.grid(row = 0, column = 1, padx = 5)
 
         # Component Update
         self.btnUpdate = Button(btnFrame, text = "Update", command = self.onUpdate,
@@ -183,7 +184,7 @@ class employee:
         self.btnClear.grid(row = 0, column = 3, pady = 10, padx = 5)
 
         # Component Delete
-        self.btnClear = Button(btnFrame, text = "Delete", command = self.onDelete,
+        self.btnDelete = Button(btnFrame, text = "Delete", command = self.onDelete,
                 state = "disable", width = 10, relief = FLAT, bd = 2, 
                 bg = "#FC6042", fg = "white", activebackground = "#444", 
                 activeforeground = "white")
@@ -191,14 +192,178 @@ class employee:
 
         # Component table
         self.fr_data = Frame(tableFrame, bd = 10)
-        self.fr_data.pack(fill = BOTH, expand = YES)
-        self.trvTabel = ttk.Treeview(self.fr_data, columns = COLUMN_TITLE,
+        self.fr_data.pack(fill = BOTH, expand = YES) 
+
+        self.trvTabel = ttk.Treeview(self.fr_data, columns = column_title,
                 show = 'headings')
         self.trvTabel.bind('<Double-1>', self.OnDoubleClick)
 
         sbVer = Scrollbar(self.fr_data, orient = 'vertical', 
                 command = self.trvTabel.yview)
-        sbVer.pack(side = RIGHT, fill = y)
+        sbVer.pack(side = RIGHT, fill = Y)
         self.trvTabel.pack(side = TOP, fill = BOTH)
         self.trvTabel.configure(yscrollcommand = sbVer.set)
         self.table()
+
+    def table(self):
+        con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user = "root",
+                password = "root", host = "localhost", port = 3306,
+                autocommit = True)
+        cur = con.cursor()
+        cur.execute("SELECT * FROM EMPLOYEE")
+        data_table = cur.fetchall()
+        
+        for column in column_title:
+            self.trvTabel.heading(column, text = column)
+            self.trvTabel.column("EMPLOYEE_ID", width = 110, anchor="w")
+            self.trvTabel.column("EMPLOYEE_NAME", width = 120, anchor = "w")
+            self.trvTabel.column("EMPLOYEE_BOD", width = 100, anchor = "w")
+            self.trvTabel.column("EMPLOYEE_ADDRESS", width = 160, anchor = "w")
+            self.trvTabel.column("EMPLOYEE_PHONE", width = 120, anchor = "w")
+            i = 0
+            for dat in data_table:
+                if(i % 2):
+                    row = "Even"
+                else:
+                    row = "Odd"
+
+                self.trvTabel.insert('', 'end', values = dat, tags = row)
+                i += 1
+
+            self.trvTabel.tag_configure("Odd", background = "#FFFFFF")
+            self.trvTabel.tag_configure("Even", background = "whitesmoke")
+        cur.close()
+        con.close()
+
+    def auto(self):
+        con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user = "root",
+                password = "root", host = 'localhost', port = 3306, 
+                autocommit = True)
+        cur = con.cursor()
+        cuv = con.cursor()
+        sqlquery = "SELECT MAX(EMP_ID) FROM EMPLOYEE"
+        sql = "SELECT EMP_ID FROM EMPLOYEE"
+        cur.execute(sqlquery)
+        cuv.execute(sql)
+        maxcode = cur.fetchone()
+        if cuv.rowcount > 0:
+            autohit = int(maxcode[0]) + 1
+            hits = "000" + str(autohit)
+            if(len(hits)) == 4:
+                self.entCode.insert(0, hits)
+                self.entName.focus_set()
+            elif(len(hits)) == 5:
+                hit = "00" + str(autohit)
+                self.entCode.insert(0, hit)
+                self.entName.focus_set()
+            elif(len(hits)) == 6:
+                hit = "0" + str(autohit)
+                self.entCode.insert(0, hit)
+                self.entName.focus_set()
+            elif(len(hits)) == 7:
+                hit = "" + str(autohit)
+                self.entCode.insert(0, hit)
+                self.entName.focus_set()
+            else:
+                messagebox.showwarning(title = "Warning!", 
+                        message = " 4 digit only!!")
+        else:
+            hit = "0001"
+            self.entCode.insert(0, hit)
+            self.entName.focus_set()
+
+        self.entCode.config(state = "readonly")
+
+    def onClose(self, event = None):
+        self.parent.destroy()
+    def onDelete(self):
+        con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user = "root",
+                password = "root", host = "localhost", port = 3306, 
+                autocommit = True)
+        cur = con.cursor()
+        self.entCode.config(state = "normal")
+        cKode = self.entCode.get()
+        sql = "DELETE FROM EPLOYEE WHERE EMPLOYEE_ID = %s"
+        cur.execute(sql)
+        self.onClear()
+        messagebox = showinfo(title = "Information!", 
+                message = "Data has been deleted!")
+        cur.close()
+        con.close()
+
+    def onClear(self):
+        self.btnSave.config(state = "normal")
+        self.btnUpdate.config(state = "disable")
+        self.btnDelete.config(state = "disable")
+        self.entCode.config(state = "normal")
+        self.entCode.delete(0, END)
+        self.entName.delete(0, END)
+        self.entDay.delete(0, END)
+        self.entMonth.delete(0, END)
+        self.entYear.delete(0, END)
+        self.entAddress.delete("1.0", "end")
+        self.entPhone.delete(0, END)
+
+        self.trvTabel.delete(*self.trvTabel.get_children())
+        self.fr_data.after(0, self.table())
+        self.auto()
+        self.entName.focus_set()
+
+    def onSave(self):
+        con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user = "root",
+                password = "root", host = "localhost", port = 3306,
+                autocommit = True)
+        cKode = self.entCode.get()
+        cName = self.entName.get()
+        cDay = self.entDay.get()
+        cMonth = self.entMonth.get()
+        cYear = self.entYear.get()
+        dBoD = datetime.date(int(cYear), int(cMonth), int(cDay))
+        cAddress = self.entAddress.get('1.0', 'end')
+        cPhone = self.entPhone.get()
+        
+        if(len(cDay) == 0 and len(cMonth) == 0 and len(cYear) == 0):
+            messagebox.showwarning(title = "Warning!!", 
+                    message = "Birth of Date may not be empty!!")
+        else:
+            cur = con.cursor()
+            sql = "INSERT INTO EMPLOYEE (EMPLOYEE_ID, EMPLOYEE_NAME, EMPLOYEE_BOD, EMPLOYEE_ADDRESS, EMPLOYEE_PHONE)" + "VALUES (%s, %s, %s, %s, %s)"
+            cur.execute(sql, cKode, cName, cBod, cAddress,cPhone)
+            self.onClear()
+            messagebox.showinfo(title = "Information!!", 
+                    message = "Your information already saved!")
+            cur.close()
+            con.close()
+
+    def onUpdate(self):
+        cKode = self.entKode.get()
+        if len(cKode) == 0:
+            messagebox.showwarning(title = "Warning!", 
+                    message = "Your Code is empty.")
+            self.entCode.focus_set()
+        else:
+            con = pymysql.connect(db = "EMPLOYEE_MANAGEMENT", user = "root",
+                    password = "root", host = "localhost", port = 3306, 
+                    autocommit = True)
+            cur = con.cursor()
+            cKode = self.entCode.get()
+            cName = self.entName.get()
+            cDay = self.entDay.get()
+            cMonth = self.entMonth.get()
+            cYear = self.entYear.get()
+            dBoD = datetime.date(int(cYear), int(cMonth), int(cDay))
+            cAddress = self.entAddress.get("1.0", "end")
+            cPhone = self.entPhone.get()
+            sql = "UPDATE EMPLOYEE SET EMPLOYEE_NAME = %s, EMPLOYEE_BOD = %s, EMPLOYEE_ADDRESS = %s, EMPLOYEE_PHONE = %s WHERE EMPLOYEE_ID = %s"
+            cur.execute(sql, (cName, dBoD, cAddress, cPhone, cKode))
+            self.onClear()
+            messagebox.showinfo(title = "Information!", 
+                    message = "Your data has been updated!!")
+            cur.close()
+            con.close()
+
+def main():
+    employee(root)
+    root.mainloop()
+
+main()

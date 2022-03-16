@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import *
 from tkinter import ttk
-import login
+import login2
 
 class SplashScreen:
     def __init__(self, parent):
@@ -42,7 +42,7 @@ class SplashScreen:
         if self.progress["value"] == 60000:
             self.parent.destroy()
             if self.parent.destroy:
-                login.main()
+                login2.main()
 
     def read_bytes(self):
         self.bytes += 1000
